@@ -262,6 +262,7 @@ public:
     }
 };
 
+/* One variable with its metadata (abstractTask) and id */
 class VariableProxy {
     const AbstractTask *task;
     int id;
@@ -287,6 +288,7 @@ public:
         return task->get_variable_name(id);
     }
 
+    /* Creating the number of propositional variables based on the domain size */
     int get_domain_size() const {
         return task->get_variable_domain_size(id);
     }
@@ -318,6 +320,7 @@ public:
     }
 };
 
+/* Contains all the variables in the task */
 class VariablesProxy {
     const AbstractTask *task;
 public:
@@ -434,6 +437,7 @@ public:
     }
 };
 
+/* Each operator like drive or get_fuel is an OperatorProxy with index=0,1 */
 class OperatorProxy {
     const AbstractTask *task;
     int index;
@@ -605,6 +609,9 @@ public:
     void unpack() const;
 
     std::size_t size() const;
+
+    /* Both can get the same output but with different parameters 
+    e.g. var_id=0 or var=VariableProxy(*task, 0)*/
     FactProxy operator[](std::size_t var_id) const;
     FactProxy operator[](VariableProxy var) const;
 

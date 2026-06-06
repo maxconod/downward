@@ -44,7 +44,8 @@ set_up_build_types("Debug;Release")
 set_up_options()
 
 project(downward LANGUAGES CXX)
-add_executable(downward planner.cc)
+add_executable(downward planner.cc
+        ../bsc-thesis/sat_formula.cc)
 
 # obtain git SHA1 hash
 execute_process(
