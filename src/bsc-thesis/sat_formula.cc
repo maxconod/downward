@@ -3,44 +3,48 @@
 Formula build_sat_formula(TaskProxy task, int T) {
 
     Formula formula = Formula();
-    VariablesProxy vars = task.get_variables();
-    OperatorsProxy ops = task.get_operators();
 
     if (T <= 0) {
         throw std::invalid_argument("Negative timestamp");
     }
 
-    formula = initial_formula(formula, task);
+    formula = initial_formula(formula, task, T);
 
-    for (int t=1; t<T; t++) {
-        formula = transition_formula(formula, task, t);
+    for (int t=0; t<T; t++) {
+        formula = transition_formula(formula, task, T, t);
     }
 
-    formula = goal_formula(formula, task);
-}
-    
-Formula initial_formula(Formula formula, TaskProxy task) {
-    State initial_state = task.get_initial_state();
-    initial_state.unpack();
-
-    for (FactProxy fact : initial_state) {
-        FactPair pair = fact.get_pair();
-        int value = fact.get_value();
-        int lit = 0;
-        if (value == 0) {
-            lit = 
-        }
-        else {
-            lit =
-        }
-        formula.push_back({lit});
-    }
+    formula = goal_formula(formula, task, T);
 
     return formula;
 }
+    
+Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
+    // State => [(v0,0), (v1,1), ...]
+    State initial_state = task_proxy.get_initial_state();
+    Clause clause = {};
+    //initial_state.unpack();
+
+    // Extracting variables+value from initial state
+    for (FactProxy fact_proxy : initial_state) {
+        VariableProxy var = fact_proxy.get_variable();
+        int lit = lit_encoding(var, T, 0);
+
+        // If the variable is false, then we negate it
+        if (fact_proxy.get_value() == 1) {
+            lit = -lit;
+        }
+
+        clause.push_back({lit});
+    }
+
+    formula.push_back(clause);
+    return formula;
+}
+
+Formula transition_formula(Formula formula, TaskProxy task, int T, int t) {
 
 
-Formula transition_formula(Formula formula, TaskProxy task, int T) {
     for (size_t i = 0; i < ops.size(); i++) {
         for (FactProxy pre : ops[i].get_preconditions()) {
             FactPair pair = pre.get_pair();
@@ -57,26 +61,27 @@ Formula transition_formula(Formula formula, TaskProxy task, int T) {
     return formula;
 }
 
+Formula goal_formula(Formula formula, TaskProxy task, int T) {
+    GoalsProxy goal_state = task_proxy.get_goals();
+    Clause clause = {};
 
+    // Extracting variables+value from goal state
+    for (FactProxy fact_proxy : goal_state) {
+        VariableProxy var = fact_proxy.get_variable();
+        int lit = lit_encoding(var, T, T);
 
-Formula goal_formula(Formula formula, TaskProxy task) {
-    State goal_state = task.get_goals();
-    goal_state.unpack();
-
-    for (FactProxy fact : goal_state) {
-        FactPair pair = fact.get_pair();
-        FactPair value = fact.get_value();
-
-        int lit = 0;
-        if (value == 0) {
-            lit =
-        }
-        else {
-            lit =
+        // If the variable is false, then we negate it
+        if (fact_proxy.get_value() == 1) {
+            lit = -lit;
         }
 
-        formula.push_back({lit});
+        clause.push_back({lit});
     }
 
+    formula.push_back(clause);
     return formula;
+}
+
+int lit_encoding(VariableProxy var, int T, int t) {
+    return var.get_id() * (T+1) + t + 1;
 }

@@ -45,7 +45,16 @@ set_up_options()
 
 project(downward LANGUAGES CXX)
 add_executable(downward planner.cc
-        ../bsc-thesis/sat_formula.cc)
+        ../bsc-thesis/sat_formula.cc
+        ../bsc-thesis/sat_planning.cpp
+        ../bsc-thesis/sat_planning.h
+)
+
+# CaDiCaL SAT solver, built separately in the sibling 'cadical' repository
+# via './configure && make' (produces src/cadical.hpp and build/libcadical.a).
+set(CADICAL_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../../cadical)
+target_include_directories(downward PRIVATE ${CADICAL_ROOT}/src)
+target_link_libraries(downward PRIVATE ${CADICAL_ROOT}/build/libcadical.a)
 
 # obtain git SHA1 hash
 execute_process(
