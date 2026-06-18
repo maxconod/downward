@@ -3,10 +3,13 @@
 #include "cadical.hpp"
 #include "sat_formula.h"
 
-std::optional<std::vector<int>> solve_formula(TaskProxy task_proxy) {
+Model solve_formula(TaskProxy task_proxy) {
     CaDiCaL::Solver * solver = new CaDiCaL::Solver;
+    Model model = {std::nullopt, 0, 0};
+    int result;
+    int T;
 
-    for (int T = 0; T < 1000; T++) {
+    for (T = 0; T < 1000; T++) {
         Formula formula = build_sat_formula(task_proxy, T);
 
         // Using the dimacs format
@@ -17,11 +20,11 @@ std::optional<std::vector<int>> solve_formula(TaskProxy task_proxy) {
             solver->add(0);
         }
 
-        int result = solver->solve();
+        result = solver->solve();
 
         // UNKNOWN
         if (result == 0) {
-            return std::nullopt;
+            return model;
         }
         // SATISFIABLE
         else if (result == 10) {
@@ -29,6 +32,9 @@ std::optional<std::vector<int>> solve_formula(TaskProxy task_proxy) {
         }
     }
 
-    std::vector<int> model;
+    if (result == 10) {
+        model = {task_proxy, T, result};
+    }
+
     return model;
 }

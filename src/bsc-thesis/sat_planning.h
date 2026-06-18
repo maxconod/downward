@@ -8,7 +8,13 @@
 #include "sat_formula.h"
 
 std::optional<std::vector<int>> solve_formula(const Formula &formula, int num_vars);
-std::tuple<Plan, T, I> extract_plan();
+// std::tuple<Plan, T, I> extract_plan();
+
+struct Model {
+    std::optional<TaskProxy> task_proxy;
+    int T;
+    int result;
+};
 
 
 #endif

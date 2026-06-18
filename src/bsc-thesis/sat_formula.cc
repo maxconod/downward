@@ -42,26 +42,43 @@ Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
     return formula;
 }
 
-Formula transition_formula(Formula formula, TaskProxy task, int T, int t) {
+Formula transition_formula(Formula formula, OperatorProxy operator_proxy, int T, int t) {
+    PreconditionsProxy pre = operator_proxy.get_preconditions();
+    EffectsProxy effects_proxy = operator_proxy.get_effects();
+    Clause clause = {};
 
+    for (FactProxy fact_proxy : pre) {
+        VariableProxy var = fact_proxy.get_variable();
+        int lit = lit_encoding(var, T, t);
 
-    for (size_t i = 0; i < ops.size(); i++) {
-        for (FactProxy pre : ops[i].get_preconditions()) {
-            FactPair pair = pre.get_pair();
-            int lit =
-            formula.push_back({lit});
+        // If the variable is false, then we negate it
+        if (fact_proxy.get_value() == 1) {
+            lit = -lit;
         }
-        for (EffectProxy eff : ops[i].get_effects()) {
-            FactPair pair = eff.get_fact().get_pair();
-            int lit =
-            formula.push_back({lit});
-        }
+
+        clause.push_back({lit});
     }
 
+    formula.push_back(clause);
+
+    for (EffectProxy eff : effects_proxy) {
+        FactProxy fact = eff.get_fact();
+        VariableProxy var = fact.get_variable();
+        int lit = lit_encoding(var, T, t);
+
+        // If the variable is false, then we negate it
+        if (fact_proxy.get_value() == 1) {
+            lit = -lit;
+        }
+
+        clause.push_back({lit});
+    }
+
+    formula.push_back(clause);
     return formula;
 }
 
-Formula goal_formula(Formula formula, TaskProxy task, int T) {
+Formula goal_formula(Formula formula, TaskProxy task_proxy, int T) {
     GoalsProxy goal_state = task_proxy.get_goals();
     Clause clause = {};
 
