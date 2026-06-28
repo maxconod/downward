@@ -6,12 +6,13 @@
 
 #include "../search/evaluator.h"
 
-State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic) {
+State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task) {
     CaDiCaL::Solver * solver = new CaDiCaL::Solver;
     int T;
+    State new_state = state;
 
     for (T = 0; T < 1000; T++) {
-        Formula formula = build_ehc_formula(state, task_proxy, T, heuristic);
+        Formula formula = build_ehc_formula(new_state, task_proxy, T, heuristic);
 
         for (Clause clause : formula) {
             for (int lit : clause) {
@@ -28,7 +29,12 @@ State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic
         }
         // SAT
         else if (result == 10) {
-            new_state = extract_state(solver, task_proxy, T);
+            new_state = extract_state(solver, task_proxy, T, abstract_task);
+
+            // We return the new state if it has a better h than the previous state
+            if (h(new_state, task_proxy) < h(state, task_proxy)) {
+                return new_state;
+            }
             break;
         }
         // UNSAT
@@ -37,6 +43,7 @@ State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic
             return state;
         }
     }
+    return state;
 }
 
 Model solve_formula(State current_state, TaskProxy task_proxy, Evaluator * heuristic) {
@@ -95,20 +102,19 @@ int h(State state, TaskProxy task) {
     return count;
 }
 
-State extract_state(CaDiCaL::Solver * solver, TaskProxy task_proxy, int T) {
-    // Temporal initial state that will be
-    State state = task_proxy.get_initial_state();
+State extract_state(CaDiCaL::Solver * solver, TaskProxy task_proxy, int T, const AbstractTask &abstract_task) {
+    std::vector<int> values(task_proxy.get_variables().size());
 
     for (VariableProxy var : task_proxy.get_variables()) {
         int lit = lit_encoding(var, T, T);
 
         if (solver->val(lit) > 0) {
-            state[var.get_id()] = 0;
+            values[var.get_id()] = 0;
         }
         else {
-            state[var.get_id()] = 1;
+            values[var.get_id()] = 1;
         }
     }
 
-    return state;
+    return State(abstract_task, std::move(values));
 }
