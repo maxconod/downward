@@ -1,4 +1,6 @@
 #include "sat_formula.h"
+#include <unordered_set>
+#include "../search/evaluator.h"
 
 Formula build_sat_formula(TaskProxy task, int T) {
 
@@ -18,9 +20,27 @@ Formula build_sat_formula(TaskProxy task, int T) {
 
     return formula;
 }
+
+Formula build_ehc_formula(State &state, TaskProxy task, int T, Evaluator * h) {
+    Formula formula = Formula();
+
+    if (T <= 0) {
+        throw std::invalid_argument("Negative timestamp");
+    }
+
+    formula = actual_state_formula(formula, state, task, T);
+
+    for (int t=0; t<T; t++) {
+        formula = transition_formula(formula, task, T, t);
+    }
+
+    formula = better_formula(formula, state, task, T);
+
+    return formula;
+}
     
 Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
-    // State => [(v0,0), (v1,1), ...]
+    // State => [0, 1, 0, 1, 1, ...]
     State initial_state = task_proxy.get_initial_state();
     Clause clause = {};
     //initial_state.unpack();
@@ -35,46 +55,104 @@ Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
             lit = -lit;
         }
 
-        clause.push_back({lit});
+        // One clause per variable
+        formula.push_back({lit});
     }
-
-    formula.push_back(clause);
+    clause.clear();
     return formula;
 }
 
-Formula transition_formula(Formula formula, OperatorProxy operator_proxy, int T, int t) {
-    PreconditionsProxy pre = operator_proxy.get_preconditions();
-    EffectsProxy effects_proxy = operator_proxy.get_effects();
+Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) {
+    OperatorsProxy operators = task_proxy.get_operators();
+    VariablesProxy vars = task_proxy.get_variables();
+    std::unordered_set<int> eff_var_ids;
     Clause clause = {};
+    // Adding all operators in one clause
+    Clause operators_clause = {};
 
-    for (FactProxy fact_proxy : pre) {
-        VariableProxy var = fact_proxy.get_variable();
-        int lit = lit_encoding(var, T, t);
+    for (OperatorProxy op : operators) {
+        PreconditionsProxy pre = op.get_preconditions();
+        EffectsProxy effects_proxy = op.get_effects();
+        int lit_op = lit_encoding(op, T, t);
 
-        // If the variable is false, then we negate it
-        if (fact_proxy.get_value() == 1) {
-            lit = -lit;
+        // Precondition
+        for (FactProxy fact_proxy : pre) {
+            // Add operator
+            clause.push_back(-lit_op);
+
+            VariableProxy var = fact_proxy.get_variable();
+            int lit = lit_encoding(var, T, t);
+
+            // If the variable is false, then we negate it
+            if (fact_proxy.get_value() == 1) {
+                lit = -lit;
+            }
+
+            clause.push_back(lit);
         }
 
-        clause.push_back({lit});
-    }
+        formula.push_back(clause);
+        clause.clear();
 
-    formula.push_back(clause);
+        // Effect
+        for (EffectProxy eff : effects_proxy) {
+            // Add biimplication clauses for variables that are not effects
+            eff_var_ids.insert(eff.get_fact().get_variable().get_id());
+            // Add operator
+            clause.push_back(-lit_op);
 
-    for (EffectProxy eff : effects_proxy) {
-        FactProxy fact = eff.get_fact();
-        VariableProxy var = fact.get_variable();
-        int lit = lit_encoding(var, T, t);
+            FactProxy fact = eff.get_fact();
+            VariableProxy var = fact.get_variable();
+            int lit = lit_encoding(var, T, t);
 
-        // If the variable is false, then we negate it
-        if (fact_proxy.get_value() == 1) {
-            lit = -lit;
+            // If the variable is false, then we negate it
+            if (fact.get_value() == 1) {
+                lit = -lit;
+            }
+
+            clause.push_back(lit);
         }
+        formula.push_back(clause);
+        clause.clear();
 
-        clause.push_back({lit});
+        operators_clause.push_back(lit_op);
+    }
+    formula.push_back(operators_clause);
+
+    // Add the biimplication (A -> (v0 <-> v1))
+    for (VariableProxy var : vars) {
+        if (eff_var_ids.find(var.get_id()) == eff_var_ids.end()) {
+            int lit_op = lit_encoding(op, T, t);
+            int lit_v0  = lit_encoding(var, T, t);
+            clause.push_back(-lit_op);
+            clause.push_back(lit_v0);
+            formula.push_back(clause);
+            clause.clear();
+
+            int lit_v1  = lit_encoding(var, T, t+1);
+            clause.push_back(-lit_op);
+            clause.push_back(lit_v1);
+            formula.push_back(clause);
+            clause.clear();
+        }
     }
 
-    formula.push_back(clause);
+    // Making clauses only using operators: Make sure only one operator can be chosen by the sat solver
+    int count = 0;
+    for (OperatorProxy op : operators) {
+        count++;
+        int lit_op = lit_encoding(op, T, t);
+        for (std::size_t j = count; j < operators.size(); j++) {
+            clause.push_back(-lit_op);
+
+            OperatorProxy op2 = operators[j];
+            int lit_op2 = lit_encoding(op2, T, t);
+            clause.push_back(-lit_op2);
+            formula.push_back(clause);
+            clause.clear();
+        }
+    }
+
     return formula;
 }
 
@@ -92,13 +170,60 @@ Formula goal_formula(Formula formula, TaskProxy task_proxy, int T) {
             lit = -lit;
         }
 
-        clause.push_back({lit});
+        formula.push_back({lit});
+    }
+
+    clause.clear();
+    return formula;
+}
+
+Formula better_formula(Formula formula, State &current_state, TaskProxy task_proxy, int T) {
+    Clause clause = {};
+
+    // Extracting variables+value from initial state
+    for (FactProxy goal : task_proxy.get_goals()) {
+        VariableProxy var = goal.get_variable();
+
+        if (current_state[goal.get_variable()] != goal) {
+            int lit = lit_encoding(var, T, T);
+
+            if (goal.get_value() == 1) {
+                lit = -lit;
+            }
+
+            clause.push_back(lit);
+        }
     }
 
     formula.push_back(clause);
+    clause.clear();
+    return formula;
+}
+
+Formula actual_state_formula(Formula formula, State current_state, TaskProxy task_proxy, int T) {
+    Clause clause = {};
+
+    // Extracting variables+value from initial state
+    for (FactProxy fact_proxy : current_state) {
+        VariableProxy var = fact_proxy.get_variable();
+        int lit = lit_encoding(var, T, t);
+
+        // If the variable is false, then we negate it
+        if (fact_proxy.get_value() == 1) {
+            lit = -lit;
+        }
+
+        formula.push_back({lit});
+    }
+
+    clause.clear();
     return formula;
 }
 
 int lit_encoding(VariableProxy var, int T, int t) {
     return var.get_id() * (T+1) + t + 1;
+}
+
+int lit_encoding_op(OperatorProxy op, int T, int t) {
+    return op.get_id() * (T+1) + t + 1;
 }

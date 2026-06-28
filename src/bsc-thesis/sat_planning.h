@@ -6,15 +6,24 @@
 #include <vector>
 #include <tuple>
 #include "sat_formula.h"
+#include "../search/evaluator.h"
 
-std::optional<std::vector<int>> solve_formula(const Formula &formula, int num_vars);
-// std::tuple<Plan, T, I> extract_plan();
+class sat_planning {
+public:
+    TaskProxy task_proxy;
+};
 
 struct Model {
     std::optional<TaskProxy> task_proxy;
     int T;
     int result;
 };
+
+Model solve_formula(State current_state, TaskProxy task_proxy, Evaluator * heuristic);
+State find_better_state(State current_state, TaskProxy task_proxy, Evaluator * heuristic);
+Evaluator get_heuristic(State state);
+// std::tuple<Plan, T, I> extract_plan();
+
 
 
 #endif
