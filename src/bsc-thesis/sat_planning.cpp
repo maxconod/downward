@@ -21,7 +21,13 @@ State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic
             solver->add(0);
         }
 
+        new_state = extract_state(solver, task_proxy, T, abstract_task);
         int result = solver->solve();
+        
+        // The new state is the goal state
+        if (is_goal(new_state, task_proxy)) {
+            return new_state;
+        }
 
         // UNKNOWN
         if (result == 0) {
@@ -29,8 +35,6 @@ State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic
         }
         // SAT
         else if (result == 10) {
-            new_state = extract_state(solver, task_proxy, T, abstract_task);
-
             // We return the new state if it has a better h than the previous state
             if (h(new_state, task_proxy) < h(state, task_proxy)) {
                 return new_state;
@@ -117,4 +121,13 @@ State extract_state(CaDiCaL::Solver * solver, TaskProxy task_proxy, int T, const
     }
 
     return State(abstract_task, std::move(values));
+}
+
+bool is_goal(State state, TaskProxy task_proxy) {
+    for (FactProxy fact : task_proxy.get_goals()) {
+        if (state[fact.get_variable()] != fact) {
+            return false;
+        }
+    }
+    return true;
 }
