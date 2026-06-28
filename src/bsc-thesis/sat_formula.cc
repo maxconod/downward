@@ -40,7 +40,7 @@ Formula build_ehc_formula(State &state, TaskProxy task, int T, Evaluator * h) {
 }
     
 Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
-    // State => [0, 1, 0, 1, 1, ...]
+    // State => [(v0,1), (v1,0), (v2,1), ...]
     State initial_state = task_proxy.get_initial_state();
     Clause clause = {};
     //initial_state.unpack();
@@ -206,7 +206,7 @@ Formula actual_state_formula(Formula formula, State current_state, TaskProxy tas
     // Extracting variables+value from initial state
     for (FactProxy fact_proxy : current_state) {
         VariableProxy var = fact_proxy.get_variable();
-        int lit = lit_encoding(var, T, t);
+        int lit = lit_encoding(var, T, 0);
 
         // If the variable is false, then we negate it
         if (fact_proxy.get_value() == 1) {
