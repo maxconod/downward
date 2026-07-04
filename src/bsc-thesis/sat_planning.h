@@ -7,6 +7,7 @@
 #include <tuple>
 #include "sat_formula.h"
 #include "../search/evaluator.h"
+#include "cadical.hpp"
 
 class sat_planning {
 public:
@@ -19,11 +20,17 @@ struct Model {
     int result;
 };
 
+struct better_state {
+    State state;
+    std::vector<OperatorID> plan;
+};
+
 Model solve_formula(State current_state, TaskProxy task_proxy, Evaluator * heuristic);
-State find_better_state(State current_state, TaskProxy task_proxy, Evaluator * heuristic);
+better_state find_better_state(State current_state, TaskProxy task_proxy, Evaluator * heuristic);
 State extract_state(CaDiCaL::Solver * solver, TaskProxy task_proxy, int T, const AbstractTask &abstract_task);
+std::vector<OperatorID> extract_plan(CaDiCaL::Solver *solver, TaskProxy task_proxy, int T);
 Evaluator get_heuristic(State state);
-int h(State state, TaskProxy task);
+int h_goal_count(State state, TaskProxy task);
 bool is_goal(State state, TaskProxy task_proxy);
 // std::tuple<Plan, T, I> extract_plan();
 

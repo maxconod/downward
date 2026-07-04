@@ -3,13 +3,15 @@
 
 #include "cadical.hpp"
 #include "sat_formula.h"
+#include <cassert>
 
 #include "../search/evaluator.h"
 
-State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task) {
+better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task) {
     CaDiCaL::Solver * solver = new CaDiCaL::Solver;
     int T;
     State new_state = state;
+    std::vector<OperatorID> plan;
 
     for (T = 0; T < 1000; T++) {
         Formula formula = build_ehc_formula(new_state, task_proxy, T, heuristic);
@@ -21,13 +23,12 @@ State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic
             solver->add(0);
         }
 
-        new_state = extract_state(solver, task_proxy, T, abstract_task);
         int result = solver->solve();
         
         // The new state is the goal state
-        if (is_goal(new_state, task_proxy)) {
-            return new_state;
-        }
+        //if (is_goal(new_state, task_proxy)) {
+        //    return new_state;
+        //}
 
         // UNKNOWN
         if (result == 0) {
@@ -36,18 +37,22 @@ State find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic
         // SAT
         else if (result == 10) {
             // We return the new state if it has a better h than the previous state
-            if (h(new_state, task_proxy) < h(state, task_proxy)) {
-                return new_state;
-            }
-            break;
+            new_state = extract_state(solver, task_proxy, T, abstract_task);
+            plan = extract_plan(solver, task_proxy, T);
+            //if (h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy)) {
+            //    return new_state;
+            //}
+            //break;
+            assert(h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy));
+            return {new_state, plan};
         }
         // UNSAT
         else if (result == 20) {
             // There are no further states that can be found, so we return the previous state
-            return state;
+            return {state, plan};
         }
     }
-    return state;
+    return {state, plan};
 }
 
 Model solve_formula(State current_state, TaskProxy task_proxy, Evaluator * heuristic) {
@@ -93,7 +98,7 @@ Model solve_formula(State current_state, TaskProxy task_proxy, Evaluator * heuri
 }
 
 // Goal-count heuristic
-int h(State state, TaskProxy task) {
+int h_goal_count(State state, TaskProxy task) {
     GoalsProxy goal_state = task.get_goals();
     int count = 0;
 
@@ -106,11 +111,11 @@ int h(State state, TaskProxy task) {
     return count;
 }
 
-State extract_state(CaDiCaL::Solver * solver, TaskProxy task_proxy, int T, const AbstractTask &abstract_task) {
+State extract_state(CaDiCaL::Solver * solver, TaskProxy task_proxy, int t, const AbstractTask &abstract_task) {
     std::vector<int> values(task_proxy.get_variables().size());
 
     for (VariableProxy var : task_proxy.get_variables()) {
-        int lit = lit_encoding(var, T, T);
+        int lit = lit_encoding(var, task_proxy, t);
 
         if (solver->val(lit) > 0) {
             values[var.get_id()] = 0;
@@ -130,4 +135,18 @@ bool is_goal(State state, TaskProxy task_proxy) {
         }
     }
     return true;
+}
+
+std::vector<OperatorID> extract_plan(CaDiCaL::Solver *solver, TaskProxy task_proxy, int T) {
+    std::vector<OperatorID> actual_plan;
+
+    for (int t = 0; t < T; t++) {
+        for (OperatorProxy op : task_proxy.get_operators()) {
+            if (solver->val(lit_encoding_op(op, task_proxy, t)) > 0) {
+                actual_plan.push_back(OperatorID(op.get_id()));
+                break;
+            }
+        }
+    }
+    return actual_plan;
 }

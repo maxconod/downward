@@ -20,7 +20,7 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t);
 Formula goal_formula(Formula formula, TaskProxy task_proxy, int T);
 Formula better_formula(Formula formula, const State &current_state, TaskProxy task_proxy, int T);
 Formula actual_state_formula(Formula formula, State current_state, TaskProxy task_proxy, int T);
-int lit_encoding(VariableProxy variable_proxy, int T, int t);
-int lit_encoding(OperatorProxy fact_proxy, int T, int t);
+int lit_encoding(VariableProxy variable_proxy, TaskProxy task_proxy, int t);
+int lit_encoding_op(OperatorProxy fact_proxy, TaskProxy task_proxy, int t);
 
 #endif
