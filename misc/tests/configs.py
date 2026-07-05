@@ -161,6 +161,10 @@ def configs_satisficing_extended():
             "--search",
             "let(h,ff(),eager(pareto([sum([g(), h]), h]), reopen_closed=true,"
             "f_eval=sum([g(), h])))"],
+        # sat ehc
+        "sat_ehc": [
+            "--search",
+            "sat_ehc()"],
     }
 
 

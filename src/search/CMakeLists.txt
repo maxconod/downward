@@ -48,6 +48,10 @@ add_executable(downward planner.cc
         ../bsc-thesis/sat_formula.cc
         ../bsc-thesis/sat_planning.cpp
         ../bsc-thesis/sat_planning.h
+        ehc_search.cpp
+        ehc_search.h
+        sat_ehc.cc
+        sat_ehc.h
 )
 
 # CaDiCaL SAT solver, built separately in the sibling 'cadical' repository

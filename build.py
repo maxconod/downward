@@ -16,7 +16,8 @@ CMAKE_GENERATOR = None
 if os.name == "posix":
     CMAKE_GENERATOR = "Unix Makefiles"
 elif os.name == "nt":
-    CMAKE_GENERATOR = "NMake Makefiles"
+    # CMAKE_GENERATOR = "NMake Makefiles"
+    CMAKE_GENERATOR = "MinGW Makefiles"
 try:
     # Number of usable CPUs (Unix only)
     NUM_CPUS = len(os.sched_getaffinity(0))

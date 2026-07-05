@@ -24,7 +24,7 @@ Formula build_sat_formula(TaskProxy task, int T) {
 Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h) {
     Formula formula = Formula();
 
-    if (T <= 0) {
+    if (T < 0) {
         throw std::invalid_argument("Negative timestamp");
     }
 
@@ -38,7 +38,7 @@ Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h) {
 
     return formula;
 }
-    
+
 Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
     // State => [(v0,1), (v1,0), (v2,1), ...]
     State initial_state = task_proxy.get_initial_state();
@@ -183,7 +183,7 @@ Formula goal_formula(Formula formula, TaskProxy task_proxy, int T) {
     return formula;
 }
 
-Formula better_formula(Formula formula, State &current_state, TaskProxy task_proxy, int T) {
+Formula better_formula(Formula formula, const State &current_state, TaskProxy task_proxy, int T) {
     Clause clause = {};
 
     // Extracting variables+value from initial state
