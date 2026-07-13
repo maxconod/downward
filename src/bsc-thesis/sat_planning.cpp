@@ -1,5 +1,7 @@
 
 #include "sat_planning.h"
+#include "../search/utils/logging.h"
+#include "../search/search_algorithms/search_common.h"
 
 #include "cadical.hpp"
 #include "sat_formula.h"
@@ -8,12 +10,13 @@
 #include "../search/evaluator.h"
 
 better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task) {
-    CaDiCaL::Solver * solver = new CaDiCaL::Solver;
     int T;
     State new_state = state;
     std::vector<OperatorID> plan;
 
-    for (T = 0; T < 1000; T++) {
+    for (T = 1; T < 1000; T++) {
+        CaDiCaL::Solver * solver = new CaDiCaL::Solver;
+        solver->set("factor", 0);
         Formula formula = build_ehc_formula(new_state, task_proxy, T, heuristic);
 
         for (Clause clause : formula) {
@@ -32,11 +35,13 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
 
         // UNKNOWN
         if (result == 0) {
+            utils::g_log << "error" << std::endl;
             // return error
         }
         // SAT
         else if (result == 10) {
             // We return the new state if it has a better h than the previous state
+            utils::g_log << "the solver found a solution" << std::endl;
             new_state = extract_state(solver, task_proxy, T, abstract_task);
             plan = extract_plan(solver, task_proxy, T);
             //if (h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy)) {
@@ -48,9 +53,11 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
         }
         // UNSAT
         else if (result == 20) {
-            // There are no further states that can be found, so we return the previous state
-            return {state, plan};
+            // No plan of length T improves the state, try a longer horizon
+            utils::g_log << "the solver didn't find a solution at T=" << T << std::endl;
         }
+
+        delete solver;
     }
     return {state, plan};
 }

@@ -21,19 +21,20 @@ SatEhcSearch::SatEhcSearch(
     OperatorCost cost_type, int bound, double max_time,
     const string &description, utils::Verbosity verbosity)
     : SearchAlgorithm(cost_type, bound, max_time, description, verbosity),
-      current_state(state_registry.get_initial_state()) {
+      current_state(state_registry.get_initial_state()),
+      initial_state(state_registry.get_initial_state()) {
 }
 
 void SatEhcSearch::print_statistics() const {
     statistics.print_detailed_statistics();
     search_space.print_statistics();
-    pruning_method->print_statistics();
+    // pruning_method->print_statistics();
 }
 
 void SatEhcSearch::initialize() {
     log << "init of SAT-based EHC search" << endl;
 
-    State initial_state = state_registry.get_initial_state();
+    // initial_state = state_registry.get_initial_state();
 }
 
 SearchStatus SatEhcSearch::step() {
@@ -43,7 +44,7 @@ SearchStatus SatEhcSearch::step() {
         return SOLVED;
     }
 
-    if (h_goal_count(current_state, task_proxy) > 0) {
+    while (h_goal_count(current_state, task_proxy) > 0) {
         better_state result = find_better_state(current_state, task_proxy, nullptr, *task);
 
         if (is_same_state(result.state, current_state)) {
@@ -59,15 +60,17 @@ SearchStatus SatEhcSearch::step() {
         }
     }
 
-    if (check_goal_and_set_plan(current_state)) {
+    //if (check_goal_and_set_plan(current_state)) {
+   //     return SOLVED;
+    //}
+
+    if (task_properties::is_goal_state(task_proxy, current_state)) {
+        log << "Solution found!" << endl;
+        set_plan(plan);
         return SOLVED;
     }
 
-    return IN_PROGRESS;
-}
-
-void SatEhcSearch::print_statistics() const {
-    log << "Plan length: " << plan.size() << endl;
+    return FAILED;
 }
 
 class SatEhcSearchFeature

@@ -103,7 +103,7 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) 
             // Add operator
             clause.push_back(-lit_op);
 
-            int lit = lit_encoding(var, task_proxy, t);
+            int lit = lit_encoding(var, task_proxy, t+1);
 
             // If the variable is false, then we negate it
             if (fact.get_value() == 1) {

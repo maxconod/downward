@@ -12,7 +12,7 @@ class SatEhcSearch : public SearchAlgorithm {
     State current_state;
     State initial_state;
     Plan plan;
-    better_state result;
+    //better_state result;
 
 protected:
     virtual void initialize() override;
