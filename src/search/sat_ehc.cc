@@ -47,6 +47,8 @@ SearchStatus SatEhcSearch::step() {
     while (h_goal_count(current_state, task_proxy) > 0) {
         better_state result = find_better_state(current_state, task_proxy, nullptr, *task);
 
+        log << "it loops through the while-loop of sat_ehc with h=" << h_goal_count(current_state, task_proxy) << endl;
+
         if (is_same_state(result.state, current_state)) {
             log << "the state wasn't improved, so failed" << endl;
             return FAILED;
@@ -59,6 +61,8 @@ SearchStatus SatEhcSearch::step() {
             plan.push_back(result.plan.at(i));
         }
     }
+    
+    log << "after the while-loop of sat_ehc containing h=" << h_goal_count(current_state, task_proxy) << endl;
 
     //if (check_goal_and_set_plan(current_state)) {
    //     return SOLVED;

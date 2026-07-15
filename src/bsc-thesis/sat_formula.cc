@@ -1,6 +1,7 @@
 #include "sat_formula.h"
 #include <unordered_set>
 #include "../search/evaluator.h"
+#include "../search/utils/logging.h"
 
 Formula build_sat_formula(TaskProxy task, int T) {
 
@@ -28,7 +29,7 @@ Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h) {
         throw std::invalid_argument("Negative timestamp");
     }
 
-    formula = actual_state_formula(formula, state, task, T);
+    formula = actual_state_formula(formula, state, task, 0);
 
     for (int t=0; t<T; t++) {
         formula = transition_formula(formula, task, T, t);
@@ -70,11 +71,26 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) 
     Clause operators_clause = {};
 
     for (OperatorProxy op : operators) {
+
+        int lit_op = lit_encoding_op(op, task_proxy, t);
+
+        // Only choosing one operator per transition
+        // e.g. (negA1 OR negA2)
+        for (size_t j = op.get_id() + 1; j < operators.size(); j++) {
+            OperatorProxy op2 = task_proxy.get_operators()[j];
+
+            int lit_op2 = lit_encoding_op(op2, task_proxy, t);
+
+            clause.push_back(-lit_op);
+            clause.push_back(-lit_op2);
+            formula.push_back(clause);
+            clause.clear();
+        }
+
+
         PreconditionsProxy pre = op.get_preconditions();
         EffectsProxy effects_proxy = op.get_effects();
         std::unordered_set<int> eff_var_ids;
-
-        int lit_op = lit_encoding_op(op, task_proxy, t);
 
         // Precondition
         for (FactProxy fact_proxy : pre) {
@@ -186,17 +202,20 @@ Formula goal_formula(Formula formula, TaskProxy task_proxy, int T) {
 Formula better_formula(Formula formula, const State &current_state, TaskProxy task_proxy, int T) {
     Clause clause = {};
 
-    // Extracting variables+value from initial state
+    // e.g. s0 = {(a,0), (b,1), (c,1), (d,0)} and goal_state = {(a,1), (b,0), (c,1), (d,0)}
+    // => better_state = neg_c^T AND d^T AND (neg_a^T OR b^T)
     for (FactProxy goal : task_proxy.get_goals()) {
         VariableProxy var = goal.get_variable();
+        int lit = lit_encoding(var, task_proxy, T);
 
-        if (current_state[goal.get_variable()] != goal) {
-            int lit = lit_encoding(var, task_proxy, T);
+        if (goal.get_value() == 1) {
+            lit = -lit;
+        }
 
-            if (goal.get_value() == 1) {
-                lit = -lit;
-            }
-
+        if (current_state[goal.get_variable()] == goal) {
+            formula.push_back({lit});
+        }
+        else {
             clause.push_back(lit);
         }
     }
