@@ -203,7 +203,7 @@ Formula better_formula(Formula formula, const State &current_state, TaskProxy ta
     Clause clause = {};
 
     // e.g. s0 = {(a,0), (b,1), (c,1), (d,0)} and goal_state = {(a,1), (b,0), (c,1), (d,0)}
-    // => better_state = neg_c^T AND d^T AND (neg_a^T OR b^T)
+    // => better_formula = neg_c^T AND d^T AND (neg_a^T OR b^T)
     for (FactProxy goal : task_proxy.get_goals()) {
         VariableProxy var = goal.get_variable();
         int lit = lit_encoding(var, task_proxy, T);

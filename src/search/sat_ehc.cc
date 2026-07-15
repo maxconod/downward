@@ -45,15 +45,17 @@ SearchStatus SatEhcSearch::step() {
     }
 
     while (h_goal_count(current_state, task_proxy) > 0) {
-        better_state result = find_better_state(current_state, task_proxy, nullptr, *task);
+        better_state result = find_better_state(current_state, task_proxy, nullptr, *task, statistics);
 
         log << "it loops through the while-loop of sat_ehc with h=" << h_goal_count(current_state, task_proxy) << endl;
 
         if (is_same_state(result.state, current_state)) {
             log << "the state wasn't improved, so failed" << endl;
+            statistics.inc_dead_ends();
             return FAILED;
         }
 
+        statistics.inc_expanded();
         current_state = result.state;
         int plan_size = result.plan.size();
 
@@ -75,6 +77,17 @@ SearchStatus SatEhcSearch::step() {
     }
 
     return FAILED;
+}
+
+SearchStatus SatEhcSearch::expand(const SearchNode &node) {
+    statistics.inc_expanded();
+
+    const State &state = node.get_state();
+    if (check_goal_and_set_plan(state))
+        return SOLVED;
+
+    // generate_successors(node);
+    return IN_PROGRESS;
 }
 
 class SatEhcSearchFeature

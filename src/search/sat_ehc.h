@@ -14,6 +14,8 @@ class SatEhcSearch : public SearchAlgorithm {
     Plan plan;
     //better_state result;
 
+    SearchStatus expand(const SearchNode &node);
+
 protected:
     virtual void initialize() override;
     virtual SearchStatus step() override;

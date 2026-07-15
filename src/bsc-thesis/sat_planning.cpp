@@ -2,6 +2,7 @@
 #include "sat_planning.h"
 #include "../search/utils/logging.h"
 #include "../search/search_algorithms/search_common.h"
+#include "../search/sat_ehc.h"
 
 #include "cadical.hpp"
 #include "sat_formula.h"
@@ -9,7 +10,7 @@
 
 #include "../search/evaluator.h"
 
-better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task) {
+better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task, SearchStatistics &statistics) {
     int T;
     State new_state = state;
     std::vector<OperatorID> plan;
@@ -26,12 +27,8 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
             solver->add(0);
         }
 
+        statistics.inc_generated();
         int result = solver->solve();
-        
-        // The new state is the goal state
-        //if (is_goal(new_state, task_proxy)) {
-        //    return new_state;
-        //}
 
         utils::g_log << "looping through the find better state at T=" << T << std::endl;
 
