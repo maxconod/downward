@@ -56,7 +56,7 @@ add_executable(downward planner.cc
 
 # CaDiCaL SAT solver, built separately in the sibling 'cadical' repository
 # via './configure && make' (produces src/cadical.hpp and build/libcadical.a).
-set(CADICAL_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../../cadical)
+set(CADICAL_ROOT $ENV{CADICAL_HOME})
 target_include_directories(downward PRIVATE ${CADICAL_ROOT}/src)
 target_link_libraries(downward PRIVATE ${CADICAL_ROOT}/build/libcadical.a)
 
