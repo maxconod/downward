@@ -45,9 +45,9 @@ SearchStatus SatEhcSearch::step() {
     }
 
     while (h_goal_count(current_state, task_proxy) > 0) {
-        better_state result = find_better_state(current_state, task_proxy, nullptr, *task, statistics);
-
         log << "it loops through the while-loop of sat_ehc with h=" << h_goal_count(current_state, task_proxy) << endl;
+
+        better_state result = find_better_state(current_state, task_proxy, nullptr, *task, statistics);
 
         if (is_same_state(result.state, current_state)) {
             log << "the state wasn't improved, so failed" << endl;

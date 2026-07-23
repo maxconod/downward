@@ -200,28 +200,19 @@ Formula goal_formula(Formula formula, TaskProxy task_proxy, int T) {
 }
 
 Formula better_formula(Formula formula, const State &current_state, TaskProxy task_proxy, int T) {
-    Clause clause = {};
+    std::vector<FactProxy> goal_facts;
 
-    // e.g. s0 = {(a,0), (b,1), (c,1), (d,0)} and goal_state = {(a,1), (b,0), (c,1), (d,0)}
-    // => better_formula = neg_c^T AND d^T AND (neg_a^T OR b^T)
+    int satisfied = 0;
     for (FactProxy goal : task_proxy.get_goals()) {
-        VariableProxy var = goal.get_variable();
-        int lit = lit_encoding(var, task_proxy, T);
-
-        if (goal.get_value() == 1) {
-            lit = -lit;
-        }
-
         if (current_state[goal.get_variable()] == goal) {
-            formula.push_back({lit});
+            satisfied++;
         }
-        else {
-            clause.push_back(lit);
-        }
+        goal_facts.push_back(goal);
     }
 
-    formula.push_back(clause);
-    clause.clear();
+    int R = satisfied + 1;
+    formula = add_at_least_r(formula, task_proxy, goal_facts, R, T);
+
     return formula;
 }
 
@@ -243,6 +234,102 @@ Formula actual_state_formula(Formula formula, State current_state, TaskProxy tas
 
     // clause.clear();
     return formula;
+}
+
+// Took inspiration from the paper: A comparison of encodings for cardinality constraints in a SAT solver from Ed Wynn
+Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<FactProxy> &goal_facts, int R, int T) {
+    int l = goal_facts.size();
+    utils::g_log << "r=" << R << ", l=" << l << std::endl;
+
+    std::vector<int> x_lits(l);
+    for (int i = 0; i < l; i++) {
+        FactProxy goal = goal_facts[i];
+        int lit = lit_encoding(goal.get_variable(), task_proxy, T);
+
+        if (goal.get_value() == 1) {
+            lit = -lit;
+        }
+        // ...negate once more so x_i is true iff the goal is unsatisfied.
+        x_lits[i] = -lit;
+    }
+
+    R = l - R;
+    int n = x_lits.size();
+    std::vector<std::vector<int>> s(R+1, std::vector<int>(n-R+1));
+    Clause clause = {};
+
+    if (R <= 0) {
+        for (int lit : x_lits) {
+            formula.push_back({-lit});
+        }
+        return formula;
+    }
+
+    // Assigning a number to each variable s
+    int m = task_proxy.get_variables().size() + task_proxy.get_operators().size();
+    int offset = T * m * 2;
+
+    utils::g_log << "Before starting the encoding of variables s!" << std::endl;
+
+    // Encode each variable s to a unique value
+    utils::g_log << "Here are the values R+1: " << R+1 << " and n-R: " << n-R << std::endl;
+    int count = 1;
+    for (int i = 0; i <= R+1; i++) {
+        for (int j = 0; j <= n-R; j++) {
+            s[i][j] = offset + count;
+            utils::g_log << "Tested s[i][j] with i=" << i << "and j=" << j << std::endl;
+            count++;
+        }
+    }
+    utils::g_log << "Passed encoding of variables s!" << std::endl;
+
+    // Adding equation 5 from paper
+    for (int k = 0; k <= R; k++) {
+        for (int j = 0; j <= n-R-1; j++) {
+            clause.push_back(-s[k][j]);
+            clause.push_back(s[k][j+1]);
+            formula.push_back(clause);
+            clause.clear();
+        }
+    }
+
+    utils::g_log << "Passed equation 5!" << std::endl;
+
+    // Adding equation 6 from paper
+    // s[0][j] is implicitly true
+    for (int j = 0; j <= n-R; j++) {
+        clause.push_back(s[0][j]);
+        clause.push_back(-x_lits[j]);
+        formula.push_back(clause);
+        clause.clear();
+    }
+
+    utils::g_log << "Passed equation 6, s[0][j] set to true!" << std::endl;
+
+    for (int k = 0; k <= R; k++) {
+        for (int j = 0; j <= n-R; j++) {
+            clause.push_back(-s[k][j]);
+            clause.push_back(s[k+1][j]);
+            clause.push_back(-x_lits[j+k]);
+            formula.push_back(clause);
+            clause.clear();
+        }
+    }
+
+    utils::g_log << "Passed equation 6 for-loops!" << std::endl;
+
+    // s[r+1][j] is implicitly false
+    for (int j = 0; j <= n-R; j++) {
+        clause.push_back(-s[R+1][j]);
+        clause.push_back(-x_lits[j+R+1]);
+        formula.push_back(clause);
+        clause.clear();
+    }
+
+    utils::g_log << "Passed equation 6, s[r+1][j] set to false!" << std::endl;
+
+    return formula;
+
 }
 
 int lit_encoding(VariableProxy var, TaskProxy task_proxy, int t) {
