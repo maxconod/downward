@@ -213,6 +213,7 @@ Formula better_formula(Formula formula, const State &current_state, TaskProxy ta
     int R = satisfied + 1;
     formula = add_at_least_r(formula, task_proxy, goal_facts, R, T);
 
+    utils::g_log << "goes through the better formula after claling method" << std::endl;
     return formula;
 }
 
@@ -232,32 +233,31 @@ Formula actual_state_formula(Formula formula, State current_state, TaskProxy tas
         formula.push_back({lit});
     }
 
-    // clause.clear();
     return formula;
 }
 
 // Took inspiration from the paper: A comparison of encodings for cardinality constraints in a SAT solver from Ed Wynn
 Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<FactProxy> &goal_facts, int R, int T) {
-    int l = goal_facts.size();
-    utils::g_log << "r=" << R << ", l=" << l << std::endl;
+    int n = goal_facts.size();
+    utils::g_log << "r=" << R << ", n=" << n << std::endl;
 
-    std::vector<int> x_lits(l);
-    for (int i = 0; i < l; i++) {
+    std::vector<int> x_lits(n);
+    for (int i = 0; i < n; i++) {
         FactProxy goal = goal_facts[i];
         int lit = lit_encoding(goal.get_variable(), task_proxy, T);
 
         if (goal.get_value() == 1) {
             lit = -lit;
         }
-        // ...negate once more so x_i is true iff the goal is unsatisfied.
+
         x_lits[i] = -lit;
     }
 
-    R = l - R;
-    int n = x_lits.size();
-    std::vector<std::vector<int>> s(R+1, std::vector<int>(n-R+1));
+    R = n - R;
+    std::vector<std::vector<int>> e(R+1, std::vector<int>(n-R+1));
     Clause clause = {};
 
+    // if R=0, then all variables are false.
     if (R <= 0) {
         for (int lit : x_lits) {
             formula.push_back({-lit});
@@ -265,68 +265,55 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         return formula;
     }
 
-    // Assigning a number to each variable s
+    // Assigning a number to each variable e
     int m = task_proxy.get_variables().size() + task_proxy.get_operators().size();
     int offset = T * m * 2;
 
-    utils::g_log << "Before starting the encoding of variables s!" << std::endl;
-
     // Encode each variable s to a unique value
-    utils::g_log << "Here are the values R+1: " << R+1 << " and n-R: " << n-R << std::endl;
     int count = 1;
-    for (int i = 0; i <= R+1; i++) {
-        for (int j = 0; j <= n-R; j++) {
-            s[i][j] = offset + count;
-            utils::g_log << "Tested s[i][j] with i=" << i << "and j=" << j << std::endl;
+    for (int k = 1; k <= R; k++) {
+        for (int j = k; j <= n+k-R-1; j++) {
+            e[k][j] = offset + count;
             count++;
         }
     }
-    utils::g_log << "Passed encoding of variables s!" << std::endl;
 
-    // Adding equation 5 from paper
-    for (int k = 0; k <= R; k++) {
-        for (int j = 0; j <= n-R-1; j++) {
-            clause.push_back(-s[k][j]);
-            clause.push_back(s[k][j+1]);
+    // Adding equation 2
+    for (int k = 1; k <= R; k++) {
+        for (int j = k; j <= n+k-R-2; j++) {
+            clause.push_back(-e[k][j]);
+            clause.push_back(e[k][j+1]);
             formula.push_back(clause);
             clause.clear();
         }
     }
 
-    utils::g_log << "Passed equation 5!" << std::endl;
-
-    // Adding equation 6 from paper
-    // s[0][j] is implicitly true
-    for (int j = 0; j <= n-R; j++) {
-        clause.push_back(s[0][j]);
-        clause.push_back(-x_lits[j]);
-        formula.push_back(clause);
-        clause.clear();
-    }
-
-    utils::g_log << "Passed equation 6, s[0][j] set to true!" << std::endl;
-
-    for (int k = 0; k <= R; k++) {
-        for (int j = 0; j <= n-R; j++) {
-            clause.push_back(-s[k][j]);
-            clause.push_back(s[k+1][j]);
-            clause.push_back(-x_lits[j+k]);
+    // Adding equation 3
+    for (int k = 1; k <= R-1; k++) {
+        for (int j = k; j <= n+k-R-1; j++) {
+            clause.push_back(-e[k][j]);
+            clause.push_back(e[k+1][j+1]);
+            clause.push_back(-x_lits[j+1]);
             formula.push_back(clause);
             clause.clear();
         }
     }
 
-    utils::g_log << "Passed equation 6 for-loops!" << std::endl;
-
-    // s[r+1][j] is implicitly false
-    for (int j = 0; j <= n-R; j++) {
-        clause.push_back(-s[R+1][j]);
-        clause.push_back(-x_lits[j+R+1]);
+    // e[0][j] is implicitly true
+    for (int j = 1; j <= n-R-1; j++) {
+        clause.push_back(e[1][j]);
+        clause.push_back(-x_lits[j+1]);
         formula.push_back(clause);
         clause.clear();
     }
 
-    utils::g_log << "Passed equation 6, s[r+1][j] set to false!" << std::endl;
+    // e[r+1][j] is implicitly false
+    for (int j = 1; j <= n-R-1; j++) {
+        clause.push_back(-e[R][j]);
+        clause.push_back(-x_lits[j+1]);
+        formula.push_back(clause);
+        clause.clear();
+    }
 
     return formula;
 
