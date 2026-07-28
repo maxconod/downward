@@ -6,22 +6,38 @@
 
 namespace sat_ehc {
 
+enum class GoalFormula {
+    AG,
+    GC,
+    SAT,
+    EFF,
+    EGC
+};
+
 class SatEhcSearch : public SearchAlgorithm {
 
+    GoalFormula goal_formula;
     std::shared_ptr<PruningMethod> pruning_method;
     State current_state;
     State initial_state;
     Plan plan;
+    std::shared_ptr<Evaluator> goal_count_h;
+    std::shared_ptr<Evaluator> ff_h;
     //better_state result;
 
     SearchStatus expand(const SearchNode &node);
+    SearchStatus step_ag();
+    SearchStatus step_gc();
+    SearchStatus step_sat();
+    SearchStatus step_egc();
+    SearchStatus step_eff();
 
 protected:
     virtual void initialize() override;
     virtual SearchStatus step() override;
 
 public:
-    explicit SatEhcSearch(
+    explicit SatEhcSearch(GoalFormula goal_formula,
         OperatorCost cost_type, int bound, double max_time,
         const std::string &description, utils::Verbosity verbosity);
 
