@@ -1,14 +1,16 @@
 
 #include "sat_planning.h"
-#include "../search/utils/logging.h"
-#include "../search/search_algorithms/search_common.h"
-#include "../search/sat_ehc.h"
 
 #include "cadical.hpp"
 #include "sat_formula.h"
-#include <cassert>
 
+#include "../search/evaluation_context.h"
 #include "../search/evaluator.h"
+#include "../search/sat_ehc.h"
+#include "../search/search_algorithms/search_common.h"
+#include "../search/utils/logging.h"
+
+#include <cassert>
 
 better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task, SearchStatistics &statistics) {
     int T;
@@ -39,16 +41,23 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
         }
         // SAT
         else if (result == 10) {
-            // We return the new state if it has a better h than the previous state
             utils::g_log << "the solver found a solution" << std::endl;
             new_state = extract_state(solver, task_proxy, T, abstract_task);
             plan = extract_plan(solver, task_proxy, T);
-            //if (h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy)) {
-            //    return new_state;
-            //}
-            //break;
-            assert(h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy));
-            return {new_state, plan};
+
+            if (heuristic == nullptr) {
+                assert(h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy));
+                return {new_state, plan};
+            }
+            else {
+                EvaluationContext current_context(state);
+                EvaluationContext new_context(new_state);
+
+                utils::g_log << "test" << std::endl;
+
+                assert(new_context.get_evaluator_value(heuristic) < current_context.get_evaluator_value(heuristic));
+                return {new_state, plan};
+            }
         }
         // UNSAT
         else if (result == 20) {
@@ -59,13 +68,15 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
     return {state, plan};
 }
 
-Model solve_formula(State current_state, TaskProxy task_proxy, Evaluator * heuristic) {
-    CaDiCaL::Solver * solver = new CaDiCaL::Solver;
-    Model model = {std::nullopt, 0, 0};
+Model solve_formula(State current_state, TaskProxy task_proxy) {
+    Model model = {{}, 0, 0};
     int result;
     int T;
+    std::vector<OperatorID> plan;
 
     for (T = 0; T < 1000; T++) {
+        CaDiCaL::Solver * solver = new CaDiCaL::Solver;
+        solver->set("factor", 0);
         Formula formula = build_sat_formula(task_proxy, T);
 
         // Using the dimacs format
@@ -78,24 +89,20 @@ Model solve_formula(State current_state, TaskProxy task_proxy, Evaluator * heuri
 
         result = solver->solve();
 
-        // UNKNOWN
-        if (result == 0) {
-            return model;
+        // SAT
+        if (result == 10) {
+            utils::g_log << "the solver found a solution" << std::endl;
+            plan = extract_plan(solver, task_proxy, T);
+            return {plan, T, result};
         }
-        // SATISFIABLE
-        else if (result == 10) {
-            break;
-        }
+        // UNSAT
         else if (result == 20) {
-
+            utils::g_log << "the solver didn't find a solution at T=" << T << std::endl;
         }
         else {
+            utils::g_log << "error" << std::endl;
             return model;
         }
-    }
-
-    if (result == 10) {
-        model = {task_proxy, T, result};
     }
 
     return model;
