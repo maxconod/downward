@@ -16,7 +16,7 @@ public:
 };
 
 struct Model {
-    std::optional<TaskProxy> task_proxy;
+    std::vector<OperatorID> plan;
     int T;
     int result;
 };
@@ -26,7 +26,7 @@ struct better_state {
     std::vector<OperatorID> plan;
 };
 
-Model solve_formula(State current_state, TaskProxy task_proxy, Evaluator * heuristic);
+Model solve_formula(State current_state, TaskProxy task_proxy);
 better_state find_better_state(State current_state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task, SearchStatistics &statistics);
 State extract_state(CaDiCaL::Solver * solver, TaskProxy task_proxy, int T, const AbstractTask &abstract_task);
 std::vector<OperatorID> extract_plan(CaDiCaL::Solver *solver, TaskProxy task_proxy, int T);
