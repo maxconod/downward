@@ -7,7 +7,7 @@ Formula build_sat_formula(TaskProxy task, int T) {
 
     Formula formula = Formula();
 
-    if (T <= 0) {
+    if (T < 0) {
         throw std::invalid_argument("Negative timestamp");
     }
 
@@ -293,7 +293,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         for (int j = k; j <= n+k-R-1; j++) {
             clause.push_back(-e[k][j]);
             clause.push_back(e[k+1][j+1]);
-            clause.push_back(-x_lits[j+1]);
+            clause.push_back(-x_lits[j]);
             formula.push_back(clause);
             clause.clear();
         }
@@ -302,7 +302,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
     // e[0][j] is implicitly true
     for (int j = 1; j <= n-R-1; j++) {
         clause.push_back(e[1][j]);
-        clause.push_back(-x_lits[j+1]);
+        clause.push_back(-x_lits[j]);
         formula.push_back(clause);
         clause.clear();
     }
@@ -310,7 +310,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
     // e[r+1][j] is implicitly false
     for (int j = 1; j <= n-R-1; j++) {
         clause.push_back(-e[R][j]);
-        clause.push_back(-x_lits[j+1]);
+        clause.push_back(-x_lits[j]);
         formula.push_back(clause);
         clause.clear();
     }
