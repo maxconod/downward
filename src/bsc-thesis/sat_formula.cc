@@ -254,7 +254,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
     }
 
     R = n - R;
-    std::vector<std::vector<int>> e(R+1, std::vector<int>(n-R+1));
+    std::vector<std::vector<int>> e(R+1, std::vector<int>(n));
     Clause clause = {};
 
     // if R=0, then all variables are false.
@@ -269,7 +269,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
     int m = task_proxy.get_variables().size() + task_proxy.get_operators().size();
     int offset = T * m * 2;
 
-    // Encode each variable s to a unique value
+    // Encode each variable e to a unique value
     int count = 1;
     for (int k = 1; k <= R; k++) {
         for (int j = k; j <= n+k-R-1; j++) {
@@ -300,15 +300,15 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
     }
 
     // e[0][j] is implicitly true
-    for (int j = 1; j <= n-R-1; j++) {
-        clause.push_back(e[1][j]);
+    for (int j = 0; j <= n-R-1; j++) {
+        clause.push_back(e[1][j+1]);
         clause.push_back(-x_lits[j]);
         formula.push_back(clause);
         clause.clear();
     }
 
     // e[r+1][j] is implicitly false
-    for (int j = 1; j <= n-R-1; j++) {
+    for (int j = R; j <= n-1; j++) {
         clause.push_back(-e[R][j]);
         clause.push_back(-x_lits[j]);
         formula.push_back(clause);
