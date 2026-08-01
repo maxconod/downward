@@ -165,6 +165,10 @@ def configs_satisficing_extended():
         "sat_ehc": [
             "--search",
             "sat_ehc()"],
+        # ehc goal-count
+        "ehc_gc": [
+            "--search",
+            "ehc(goalcount())"],
     }
 
 
