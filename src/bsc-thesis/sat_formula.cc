@@ -11,7 +11,7 @@ Formula build_sat_formula(TaskProxy task, int T) {
         throw std::invalid_argument("Negative timestamp");
     }
 
-    formula = initial_formula(formula, task, T);
+    formula = initial_formula(formula, task, 0);
 
     for (int t=0; t<T; t++) {
         formula = transition_formula(formula, task, T, t);
