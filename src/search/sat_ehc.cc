@@ -51,12 +51,8 @@ SearchStatus SatEhcSearch::step() {
         return step_ag();
     case GoalFormula::GC:
         return step_gc();
-    case GoalFormula::EFF:
-        return step_eff();
     case GoalFormula::SAT:
         return step_sat();
-    case GoalFormula::EGC:
-        return step_egc();
     }
 
     log << "didn't find any existing goal_formula" << endl;
@@ -157,18 +153,6 @@ SearchStatus SatEhcSearch::step_sat() {
         set_plan(model.plan);
         return SOLVED;
     }
-    return FAILED;
-}
-
-// Searching as EHC using the plugged-in FF Heuristic
-SearchStatus SatEhcSearch::step_eff() {
-    log << "reached EFF" << endl;
-    return FAILED;
-}
-
-// Searching as EHC using the plugged-in goal-count heuristic
-SearchStatus SatEhcSearch::step_egc() {
-    log << "reached EGC" << endl;
     return FAILED;
 }
 
