@@ -267,6 +267,8 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         return formula;
     }
 
+    utils::g_log << "before R<0-----------" << std::endl;
+
     // Assigning a number to each variable e
     int m = task_proxy.get_variables().size() + task_proxy.get_operators().size();
     int offset = T * m * 2;
@@ -280,6 +282,8 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         }
     }
 
+    utils::g_log << "before e-----------" << std::endl;
+
     // Adding equation 2
     for (int k = 1; k <= R; k++) {
         for (int j = k; j <= n+k-R-2; j++) {
@@ -289,6 +293,8 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
             clause.clear();
         }
     }
+
+    utils::g_log << "before eq2-----------" << std::endl;
 
     // Adding equation 3
     for (int k = 1; k <= R-1; k++) {
@@ -301,6 +307,8 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         }
     }
 
+    utils::g_log << "before eq3-----------" << std::endl;
+
     // e[0][j] is implicitly true
     for (int j = 0; j <= n-R-1; j++) {
         clause.push_back(e[1][j+1]);
@@ -309,6 +317,8 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         clause.clear();
     }
 
+    utils::g_log << "before e true-----------" << std::endl;
+
     // e[r+1][j] is implicitly false
     for (int j = R; j <= n-1; j++) {
         clause.push_back(-e[R][j]);
@@ -316,6 +326,8 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         formula.push_back(clause);
         clause.clear();
     }
+
+    utils::g_log << "before e false-----------" << std::endl;
 
     return formula;
 
