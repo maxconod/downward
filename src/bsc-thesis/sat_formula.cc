@@ -70,9 +70,10 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) 
     // Adding all operators in one clause
     Clause operators_clause = {};
 
+    int count = 0;
     for (OperatorProxy op : operators) {
 
-        int lit_op = lit_encoding_op(op, task_proxy, t);
+       /* int lit_op = lit_encoding_op(op, task_proxy, t);
 
         // Only choosing one operator per transition
         // e.g. (negA1 OR negA2)
@@ -82,6 +83,19 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) 
             int lit_op2 = lit_encoding_op(op2, task_proxy, t);
 
             clause.push_back(-lit_op);
+            clause.push_back(-lit_op2);
+            formula.push_back(clause);
+            clause.clear();
+        }*/
+
+        // Making clauses only using operators: Make sure only one operator can be chosen by the sat solver
+        count++;
+        int lit_op = lit_encoding_op(op, task_proxy, t);
+        for (std::size_t j = count; j < operators.size(); j++) {
+            clause.push_back(-lit_op);
+
+            OperatorProxy op2 = operators[j];
+            int lit_op2 = lit_encoding_op(op2, task_proxy, t);
             clause.push_back(-lit_op2);
             formula.push_back(clause);
             clause.clear();
@@ -131,7 +145,7 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) 
             clause.clear();
         }
 
-
+        // Adding a clause with all the operators
         operators_clause.push_back(lit_op);
 
 
@@ -160,7 +174,7 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) 
 
 
     // Making clauses only using operators: Make sure only one operator can be chosen by the sat solver
-    int count = 0;
+    /*int count = 0;
     for (OperatorProxy op : operators) {
         count++;
         int lit_op = lit_encoding_op(op, task_proxy, t);
@@ -173,7 +187,7 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) 
             formula.push_back(clause);
             clause.clear();
         }
-    }
+    }*/
 
     return formula;
 }
@@ -267,7 +281,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         return formula;
     }
 
-    utils::g_log << "before R<0-----------" << std::endl;
+    utils::g_log << "after R<0-----------" << std::endl;
 
     // Assigning a number to each variable e
     int m = task_proxy.get_variables().size() + task_proxy.get_operators().size();
@@ -282,7 +296,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         }
     }
 
-    utils::g_log << "before e-----------" << std::endl;
+    utils::g_log << "after e-----------" << std::endl;
 
     // Adding equation 2
     for (int k = 1; k <= R; k++) {
@@ -294,7 +308,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         }
     }
 
-    utils::g_log << "before eq2-----------" << std::endl;
+    utils::g_log << "after eq2-----------" << std::endl;
 
     // Adding equation 3
     for (int k = 1; k <= R-1; k++) {
@@ -307,7 +321,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         }
     }
 
-    utils::g_log << "before eq3-----------" << std::endl;
+    utils::g_log << "after eq3-----------" << std::endl;
 
     // e[0][j] is implicitly true
     for (int j = 0; j <= n-R-1; j++) {
@@ -317,7 +331,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         clause.clear();
     }
 
-    utils::g_log << "before e true-----------" << std::endl;
+    utils::g_log << "after e true-----------" << std::endl;
 
     // e[r+1][j] is implicitly false
     for (int j = R; j <= n-1; j++) {
@@ -327,7 +341,7 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         clause.clear();
     }
 
-    utils::g_log << "before e false-----------" << std::endl;
+    utils::g_log << "after e false-----------" << std::endl;
 
     return formula;
 
