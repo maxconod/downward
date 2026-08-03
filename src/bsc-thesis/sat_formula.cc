@@ -252,6 +252,8 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
 
         x_lits[i] = -lit;
     }
+    utils::g_log << "testing-----------" << std::endl;
+
 
     R = n - R;
     std::vector<std::vector<int>> e(R+1, std::vector<int>(n));
