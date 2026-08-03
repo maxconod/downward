@@ -45,6 +45,7 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
             new_state = extract_state(solver, task_proxy, T, abstract_task);
             plan = extract_plan(solver, task_proxy, T);
 
+            statistics.inc_evaluated_states();
             if (heuristic == nullptr) {
                 assert(h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy));
                 return {new_state, plan};
@@ -55,7 +56,6 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
 
                 utils::g_log << "test" << std::endl;
 
-                statistics.inc_evaluated_states();
                 assert(new_context.get_evaluator_value(heuristic) < current_context.get_evaluator_value(heuristic));
                 return {new_state, plan};
             }
