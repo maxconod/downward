@@ -55,6 +55,7 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
 
                 utils::g_log << "test" << std::endl;
 
+                statistics.inc_evaluated_states();
                 assert(new_context.get_evaluator_value(heuristic) < current_context.get_evaluator_value(heuristic));
                 return {new_state, plan};
             }

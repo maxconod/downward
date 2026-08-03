@@ -191,8 +191,6 @@ static plugins::FeaturePlugin<SatEhcSearchFeature> _plugin;
 static plugins::TypedEnumPlugin<GoalFormula> _enum_plugin(
     {{"AG", "Searching as SAT_EHC with better_formula"},
     {"GC", "Searching as SAT_EHC using the plugged-in goal-count heuristic"},
-    {"SAT", "Searching as SAT_EHC with the original sat planning"},
-    {"EFF", "Searching as EHC using the plugged-in FF Heuristic"},
-    {"EGC", "Searching as EHC using the plugged-in goal-count heuristic"}
+    {"SAT", "Searching as SAT_EHC with the original sat planning"}
 });
 }

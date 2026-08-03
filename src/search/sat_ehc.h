@@ -9,9 +9,7 @@ namespace sat_ehc {
 enum class GoalFormula {
     AG,
     GC,
-    SAT,
-    EFF,
-    EGC
+    SAT
 };
 
 class SatEhcSearch : public SearchAlgorithm {
@@ -29,8 +27,6 @@ class SatEhcSearch : public SearchAlgorithm {
     SearchStatus step_ag();
     SearchStatus step_gc();
     SearchStatus step_sat();
-    SearchStatus step_egc();
-    SearchStatus step_eff();
 
 protected:
     virtual void initialize() override;
