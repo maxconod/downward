@@ -27,7 +27,6 @@ class SatEhcSearch : public SearchAlgorithm {
     SearchStatus step_ag();
     SearchStatus step_gc();
     SearchStatus step_sat();
-    bool is_same_state(State a, State b);
 
 protected:
     virtual void initialize() override;
