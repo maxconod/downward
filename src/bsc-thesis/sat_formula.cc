@@ -77,21 +77,6 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int t) {
     int count = 0;
     for (OperatorProxy op : operators) {
 
-       /* int lit_op = lit_encoding_op(op, task_proxy, t);
-
-        // Only choosing one operator per transition
-        // e.g. (negA1 OR negA2)
-        for (size_t j = op.get_id() + 1; j < operators.size(); j++) {
-            OperatorProxy op2 = task_proxy.get_operators()[j];
-
-            int lit_op2 = lit_encoding_op(op2, task_proxy, t);
-
-            clause.push_back(-lit_op);
-            clause.push_back(-lit_op2);
-            formula.push_back(clause);
-            clause.clear();
-        }*/
-
         // Making clauses only using operators: Make sure only one operator can be chosen by the sat solver
         count++;
         int lit_op = lit_encoding_op(op, task_proxy, t);
@@ -156,7 +141,7 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int t) {
         // Add the biimplication (A -> (v0 <-> v1))
         // which equals = (negA OR (neg_v0 OR v1)) AND (negA OR (neg_v1 OR v0)))
         for (VariableProxy var : vars) {
-            if (eff_var_ids.find(var.get_id()) == eff_var_ids.end()) {
+            if (!eff_var_ids.contains(var.get_id())) {
                 // int lit_op = lit_encoding_op(op, task_proxy, t);
                 int lit_v0  = lit_encoding(var, task_proxy, t);
                 int lit_v1  = lit_encoding(var, task_proxy, t+1);
