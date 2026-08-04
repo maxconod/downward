@@ -59,7 +59,7 @@ SearchStatus SatEhcSearch::step() {
     return FAILED;
 }
 
-// Searching as SAT_EHC with better_formula
+// Searching as SAT_EHC with better_formula (AG : "add goal")
 SearchStatus SatEhcSearch::step_ag() {
     current_state = initial_state;
 
@@ -72,7 +72,7 @@ SearchStatus SatEhcSearch::step_ag() {
     while (h_goal_count(current_state, task_proxy) > 0) {
         log << "it loops through the while-loop of sat_ehc with h=" << h_goal_count(current_state, task_proxy) << endl;
 
-        better_state result = find_better_state(current_state, task_proxy, nullptr, *task, statistics);
+        better_state result = find_better_state(current_state, task_proxy, goal_count_h.get(), *task, statistics, true);
 
         if (is_same_state(result.state, current_state)) {
             log << "the state wasn't improved, so failed" << endl;
@@ -115,7 +115,7 @@ SearchStatus SatEhcSearch::step_gc() {
 
     while (h_goal_count(current_state, task_proxy) > 0) {
 
-        better_state result = find_better_state(current_state, task_proxy, goal_count_h.get(), *task, statistics);
+        better_state result = find_better_state(current_state, task_proxy, goal_count_h.get(), *task, statistics, false);
 
         if (is_same_state(result.state, current_state)) {
             log << "the state wasn't improved, so failed" << endl;

@@ -22,7 +22,7 @@ Formula build_sat_formula(TaskProxy task, int T) {
     return formula;
 }
 
-Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h) {
+Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h, bool with_constraint) {
     Formula formula = Formula();
 
     if (T < 0) {
@@ -35,7 +35,12 @@ Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h) {
         formula = transition_formula(formula, task, T, t);
     }
 
-    formula = better_formula(formula, state, task, T);
+    if (with_constraint) {
+        formula = better_formula_with_constraint(formula, state, task, T);
+    }
+    else {
+        formula = better_formula(formula, state, task, T);
+    }
 
     return formula;
 }
@@ -44,7 +49,6 @@ Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
     // State => [(v0,1), (v1,0), (v2,1), ...]
     State initial_state = task_proxy.get_initial_state();
     Clause clause = {};
-    //initial_state.unpack();
 
     // Extracting variables+value from initial state
     for (FactProxy fact_proxy : initial_state) {
@@ -172,23 +176,6 @@ Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) 
     }
     formula.push_back(operators_clause);
 
-
-    // Making clauses only using operators: Make sure only one operator can be chosen by the sat solver
-    /*int count = 0;
-    for (OperatorProxy op : operators) {
-        count++;
-        int lit_op = lit_encoding_op(op, task_proxy, t);
-        for (std::size_t j = count; j < operators.size(); j++) {
-            clause.push_back(-lit_op);
-
-            OperatorProxy op2 = operators[j];
-            int lit_op2 = lit_encoding_op(op2, task_proxy, t);
-            clause.push_back(-lit_op2);
-            formula.push_back(clause);
-            clause.clear();
-        }
-    }*/
-
     return formula;
 }
 
@@ -213,7 +200,7 @@ Formula goal_formula(Formula formula, TaskProxy task_proxy, int T) {
     return formula;
 }
 
-Formula better_formula(Formula formula, const State &current_state, TaskProxy task_proxy, int T) {
+Formula better_formula_with_constraint(Formula formula, const State &current_state, TaskProxy task_proxy, int T) {
     std::vector<FactProxy> goal_facts;
 
     int satisfied = 0;
@@ -228,6 +215,33 @@ Formula better_formula(Formula formula, const State &current_state, TaskProxy ta
     formula = add_at_least_r(formula, task_proxy, goal_facts, R, T);
 
     utils::g_log << "goes through the better formula after claling method" << std::endl;
+    return formula;
+}
+
+// better formula without using the cardinality constraint for r
+Formula better_formula(Formula formula, const State &current_state, TaskProxy task_proxy, int T) {
+    Clause clause = {};
+
+    // e.g. s0 = {(a,0), (b,1), (c,1), (d,0)} and goal_state = {(a,1), (b,0), (c,1), (d,0)}
+    // => better_formula = neg_c^T AND d^T AND (neg_a^T OR b^T)
+    for (FactProxy goal : task_proxy.get_goals()) {
+        VariableProxy var = goal.get_variable();
+        int lit = lit_encoding(var, task_proxy, T);
+
+        if (goal.get_value() == 1) {
+            lit = -lit;
+        }
+
+        if (current_state[goal.get_variable()] == goal) {
+            formula.push_back({lit});
+        }
+        else {
+            clause.push_back(lit);
+        }
+    }
+
+    formula.push_back(clause);
+    clause.clear();
     return formula;
 }
 

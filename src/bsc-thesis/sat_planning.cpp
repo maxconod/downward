@@ -12,7 +12,7 @@
 
 #include <cassert>
 
-better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task, SearchStatistics &statistics) {
+better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task, SearchStatistics &statistics, bool using_constraint) {
     int T;
     State new_state = state;
     std::vector<OperatorID> plan;
@@ -20,7 +20,8 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
     for (T = 1; T < 150; T++) {
         CaDiCaL::Solver * solver = new CaDiCaL::Solver;
         solver->set("factor", 0);
-        Formula formula = build_ehc_formula(new_state, task_proxy, T, heuristic);
+
+        Formula formula = build_ehc_formula(new_state, task_proxy, T, heuristic, using_constraint);
 
         for (Clause clause : formula) {
             for (int lit : clause) {
@@ -46,19 +47,16 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
             plan = extract_plan(solver, task_proxy, T);
 
             statistics.inc_evaluated_states();
-            if (heuristic == nullptr) {
-                assert(h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy));
-                return {new_state, plan};
-            }
-            else {
-                EvaluationContext current_context(state);
-                EvaluationContext new_context(new_state);
+            assert(h_goal_count(new_state, task_proxy) < h_goal_count(state, task_proxy));
+            return {new_state, plan};
 
-                utils::g_log << "test" << std::endl;
+            EvaluationContext current_context(state);
+            EvaluationContext new_context(new_state);
 
-                assert(new_context.get_evaluator_value(heuristic) < current_context.get_evaluator_value(heuristic));
-                return {new_state, plan};
-            }
+            utils::g_log << "test" << std::endl;
+
+            assert(new_context.get_evaluator_value(heuristic) < current_context.get_evaluator_value(heuristic));
+            return {new_state, plan};
         }
         // UNSAT
         else if (result == 20) {
