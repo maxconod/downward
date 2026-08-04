@@ -11,10 +11,10 @@ Formula build_sat_formula(TaskProxy task, int T) {
         throw std::invalid_argument("Negative timestamp");
     }
 
-    formula = initial_formula(formula, task, 0);
+    formula = initial_formula(formula, task);
 
     for (int t=0; t<T; t++) {
-        formula = transition_formula(formula, task, T, t);
+        formula = transition_formula(formula, task, t);
     }
 
     formula = goal_formula(formula, task, T);
@@ -29,10 +29,10 @@ Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h, boo
         throw std::invalid_argument("Negative timestamp");
     }
 
-    formula = actual_state_formula(formula, state, task, 0);
+    formula = actual_state_formula(formula, state, task);
 
     for (int t=0; t<T; t++) {
-        formula = transition_formula(formula, task, T, t);
+        formula = transition_formula(formula, task, t);
     }
 
     if (with_constraint) {
@@ -45,7 +45,7 @@ Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h, boo
     return formula;
 }
 
-Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
+Formula initial_formula(Formula formula, TaskProxy task_proxy) {
     // State => [(v0,1), (v1,0), (v2,1), ...]
     State initial_state = task_proxy.get_initial_state();
     Clause clause = {};
@@ -67,7 +67,7 @@ Formula initial_formula(Formula formula, TaskProxy task_proxy, int T) {
     return formula;
 }
 
-Formula transition_formula(Formula formula, TaskProxy task_proxy, int T, int t) {
+Formula transition_formula(Formula formula, TaskProxy task_proxy, int t) {
     OperatorsProxy operators = task_proxy.get_operators();
     VariablesProxy vars = task_proxy.get_variables();
     Clause clause = {};
@@ -246,7 +246,7 @@ Formula better_formula(Formula formula, const State &current_state, TaskProxy ta
     return formula;
 }
 
-Formula actual_state_formula(Formula formula, State current_state, TaskProxy task_proxy, int T) {
+Formula actual_state_formula(Formula formula, State current_state, TaskProxy task_proxy) {
     // Clause clause = {};
 
     // Extracting variables+value from initial state

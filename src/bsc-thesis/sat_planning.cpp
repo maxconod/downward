@@ -67,7 +67,7 @@ better_state find_better_state(State state, TaskProxy task_proxy, Evaluator * he
     return {state, plan};
 }
 
-Model solve_formula(State current_state, TaskProxy task_proxy) {
+Model solve_formula(TaskProxy task_proxy) {
     Model model = {{}, 0, 0};
     int result;
     int T;

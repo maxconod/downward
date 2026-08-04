@@ -147,7 +147,7 @@ SearchStatus SatEhcSearch::step_gc() {
 SearchStatus SatEhcSearch::step_sat() {
     log << "reached SAT" << endl;
 
-    Model model = solve_formula(initial_state, task_proxy);
+    Model model = solve_formula(task_proxy);
 
     if (model.result == 10) {
         set_plan(model.plan);
