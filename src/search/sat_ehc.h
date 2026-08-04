@@ -7,8 +7,8 @@
 namespace sat_ehc {
 
 enum class GoalFormula {
-    AG,
-    GC,
+    AC,
+    BF,
     SAT
 };
 
@@ -24,8 +24,8 @@ class SatEhcSearch : public SearchAlgorithm {
     //better_state result;
 
     SearchStatus expand(const SearchNode &node);
-    SearchStatus step_ag();
-    SearchStatus step_gc();
+    SearchStatus step_ac();
+    SearchStatus step_bf();
     SearchStatus step_sat();
 
 protected:

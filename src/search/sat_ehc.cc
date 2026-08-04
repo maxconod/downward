@@ -47,10 +47,10 @@ void SatEhcSearch::initialize() {
 SearchStatus SatEhcSearch::step() {
 
     switch (goal_formula) {
-    case GoalFormula::AG:
-        return step_ag();
-    case GoalFormula::GC:
-        return step_gc();
+    case GoalFormula::AC:
+        return step_ac();
+    case GoalFormula::BF:
+        return step_bf();
     case GoalFormula::SAT:
         return step_sat();
     }
@@ -59,11 +59,11 @@ SearchStatus SatEhcSearch::step() {
     return FAILED;
 }
 
-// Searching as SAT_EHC with better_formula (AG : "add goal")
-SearchStatus SatEhcSearch::step_ag() {
+// Searching as SAT_EHC with better formula and the cardinality constraint ("add cardinality" : AC)
+SearchStatus SatEhcSearch::step_ac() {
     current_state = initial_state;
 
-    log << "reached AG" << endl;
+    log << "reached AC" << endl;
 
     if (check_goal_and_set_plan(current_state)) {
         return SOLVED;
@@ -104,10 +104,10 @@ SearchStatus SatEhcSearch::step_ag() {
     return FAILED;
 }
 
-// Searching as SAT_EHC using the plugged-in goal-count heuristic
-SearchStatus SatEhcSearch::step_gc() {
+// Searching as SAT_EHC with better formula ("better formula" : BF)
+SearchStatus SatEhcSearch::step_bf() {
     current_state = initial_state;
-    log << "reached GC" << endl;
+    log << "reached BF" << endl;
 
     if (check_goal_and_set_plan(current_state)) {
         return SOLVED;
@@ -189,8 +189,8 @@ public:
 
 static plugins::FeaturePlugin<SatEhcSearchFeature> _plugin;
 static plugins::TypedEnumPlugin<GoalFormula> _enum_plugin(
-    {{"AG", "Searching as SAT_EHC with better_formula"},
-    {"GC", "Searching as SAT_EHC using the plugged-in goal-count heuristic"},
+    {{"AC", "Searching as SAT_EHC with better_formula"},
+    {"BF", "Searching as SAT_EHC using the plugged-in goal-count heuristic"},
     {"SAT", "Searching as SAT_EHC with the original sat planning"}
 });
 }
