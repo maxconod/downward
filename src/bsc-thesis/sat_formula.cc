@@ -201,6 +201,7 @@ Formula goal_formula(Formula formula, TaskProxy task_proxy, int T) {
 }
 
 Formula better_formula_with_constraint(Formula formula, const State &current_state, TaskProxy task_proxy, int T) {
+    utils::g_log << "reaching with constraint" << std::endl;
     std::vector<FactProxy> goal_facts;
 
     int satisfied = 0;
@@ -214,12 +215,12 @@ Formula better_formula_with_constraint(Formula formula, const State &current_sta
     int R = satisfied + 1;
     formula = add_at_least_r(formula, task_proxy, goal_facts, R, T);
 
-    utils::g_log << "goes through the better formula after claling method" << std::endl;
     return formula;
 }
 
 // better formula without using the cardinality constraint for r
 Formula better_formula(Formula formula, const State &current_state, TaskProxy task_proxy, int T) {
+    utils::g_log << "reaching without constraint" << std::endl;
     Clause clause = {};
 
     // e.g. s0 = {(a,0), (b,1), (c,1), (d,0)} and goal_state = {(a,1), (b,0), (c,1), (d,0)}
