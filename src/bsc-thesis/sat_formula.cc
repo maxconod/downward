@@ -2,6 +2,7 @@
 #include <unordered_set>
 #include "../search/evaluator.h"
 #include "../search/utils/logging.h"
+#include "sat_planning.h"
 
 Formula build_sat_formula(TaskProxy task, int T) {
 
@@ -22,7 +23,7 @@ Formula build_sat_formula(TaskProxy task, int T) {
     return formula;
 }
 
-Formula build_ehc_formula(State state, TaskProxy task, int T, Evaluator * h, bool with_constraint) {
+Formula build_ehc_formula(State state, TaskProxy task, int T, bool with_constraint) {
     Formula formula = Formula();
 
     if (T < 0) {
@@ -189,15 +190,13 @@ Formula better_formula_with_constraint(Formula formula, const State &current_sta
     utils::g_log << "reaching with constraint" << std::endl;
     std::vector<FactProxy> goal_facts;
 
-    int satisfied = 0;
     for (FactProxy goal : task_proxy.get_goals()) {
-        if (current_state[goal.get_variable()] == goal) {
-            satisfied++;
-        }
         goal_facts.push_back(goal);
     }
 
-    int R = satisfied + 1;
+    GoalsProxy goals_proxy = task_proxy.get_goals();
+
+    int R = static_cast<int>(goals_proxy.size()) - h_goal_count(current_state, task_proxy) + 1;
     formula = add_at_least_r(formula, task_proxy, goal_facts, R, T);
 
     return formula;
@@ -266,8 +265,6 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
 
         x_lits[i] = -lit;
     }
-    utils::g_log << "testing-----------" << std::endl;
-
 
     R = n - R;
     std::vector<std::vector<int>> e(R+1, std::vector<int>(n));
@@ -280,8 +277,6 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         }
         return formula;
     }
-
-    utils::g_log << "after R<0-----------" << std::endl;
 
     // Assigning a number to each variable e
     int m = task_proxy.get_variables().size() + task_proxy.get_operators().size();
@@ -296,8 +291,6 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         }
     }
 
-    utils::g_log << "after e-----------" << std::endl;
-
     // Adding equation 2
     for (int k = 1; k <= R; k++) {
         for (int j = k; j <= n+k-R-2; j++) {
@@ -307,8 +300,6 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
             clause.clear();
         }
     }
-
-    utils::g_log << "after eq2-----------" << std::endl;
 
     // Adding equation 3
     for (int k = 1; k <= R-1; k++) {
@@ -321,8 +312,6 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         }
     }
 
-    utils::g_log << "after eq3-----------" << std::endl;
-
     // e[0][j] is implicitly true
     for (int j = 0; j <= n-R-1; j++) {
         clause.push_back(e[1][j+1]);
@@ -330,8 +319,6 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         formula.push_back(clause);
         clause.clear();
     }
-
-    utils::g_log << "after e true-----------" << std::endl;
 
     // e[r+1][j] is implicitly false
     for (int j = R; j <= n-1; j++) {
@@ -341,14 +328,11 @@ Formula add_at_least_r(Formula formula, TaskProxy task_proxy, const std::vector<
         clause.clear();
     }
 
-    utils::g_log << "after e false-----------" << std::endl;
-
     return formula;
 
 }
 
 int lit_encoding(VariableProxy var, TaskProxy task_proxy, int t) {
-    //return var.get_id() * (T+1) + t + 1;
     int n = task_proxy.get_variables().size() + task_proxy.get_operators().size();
     return t * n + var.get_id() + 1;
 }

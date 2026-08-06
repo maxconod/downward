@@ -14,7 +14,7 @@ class sat_formula {
 };
 
 Formula build_sat_formula(TaskProxy task_proxy, int T);
-Formula build_ehc_formula(State state, TaskProxy task_proxy, int T, Evaluator * h, bool with_constraint);
+Formula build_ehc_formula(State state, TaskProxy task_proxy, int T, bool with_constraint);
 Formula initial_formula(Formula formula, TaskProxy task_proxy);
 Formula transition_formula(Formula formula, TaskProxy task_proxy, int t);
 Formula goal_formula(Formula formula, TaskProxy task_proxy, int T);

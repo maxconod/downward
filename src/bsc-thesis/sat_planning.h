@@ -27,7 +27,7 @@ struct better_state {
 };
 
 Model solve_formula(TaskProxy task_proxy);
-better_state find_better_state(State current_state, TaskProxy task_proxy, Evaluator * heuristic, AbstractTask &abstract_task, SearchStatistics &statistics, bool using_constraint);
+better_state find_better_state(State current_state, TaskProxy task_proxy, AbstractTask &abstract_task, SearchStatistics &statistics, bool using_constraint);
 State extract_state(CaDiCaL::Solver * solver, TaskProxy task_proxy, int T, const AbstractTask &abstract_task);
 std::vector<OperatorID> extract_plan(CaDiCaL::Solver *solver, TaskProxy task_proxy, int T);
 Evaluator get_heuristic(State state);

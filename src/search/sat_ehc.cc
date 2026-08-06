@@ -31,15 +31,10 @@ SatEhcSearch::SatEhcSearch(
 void SatEhcSearch::print_statistics() const {
     statistics.print_detailed_statistics();
     search_space.print_statistics();
-    // pruning_method->print_statistics();
 }
 
 void SatEhcSearch::initialize() {
     log << "init of SAT-based EHC search" << endl;
-
-    shared_ptr<Evaluator> goal_count_h = make_shared<goal_count_heuristic::GoalCountHeuristic>(task, false, "goalcount", utils::Verbosity::SILENT);
-    shared_ptr<Evaluator> ff_h = make_shared<goal_count_heuristic::GoalCountHeuristic>(task, false, "ff", utils::Verbosity::SILENT);
-
     initial_state = state_registry.get_initial_state();
 }
 
@@ -72,7 +67,7 @@ SearchStatus SatEhcSearch::step_ac() {
     while (h_goal_count(current_state, task_proxy) > 0) {
         log << "it loops through the while-loop of sat_ehc with h=" << h_goal_count(current_state, task_proxy) << endl;
 
-        better_state result = find_better_state(current_state, task_proxy, goal_count_h.get(), *task, statistics, true);
+        better_state result = find_better_state(current_state, task_proxy, *task, statistics, true);
 
         if (is_same_state(result.state, current_state)) {
             log << "the state wasn't improved, so failed" << endl;
@@ -88,12 +83,6 @@ SearchStatus SatEhcSearch::step_ac() {
             plan.push_back(result.plan.at(i));
         }
     }
-
-    log << "after the while-loop of sat_ehc containing h=" << h_goal_count(current_state, task_proxy) << endl;
-
-    //if (check_goal_and_set_plan(current_state)) {
-    //     return SOLVED;
-    //}
 
     if (task_properties::is_goal_state(task_proxy, current_state)) {
         log << "Solution found!" << endl;
@@ -115,7 +104,7 @@ SearchStatus SatEhcSearch::step_bf() {
 
     while (h_goal_count(current_state, task_proxy) > 0) {
 
-        better_state result = find_better_state(current_state, task_proxy, goal_count_h.get(), *task, statistics, false);
+        better_state result = find_better_state(current_state, task_proxy, *task, statistics, false);
 
         if (is_same_state(result.state, current_state)) {
             log << "the state wasn't improved, so failed" << endl;
@@ -131,8 +120,6 @@ SearchStatus SatEhcSearch::step_bf() {
             plan.push_back(result.plan.at(i));
         }
     }
-
-    log << "after the while-loop of sat_ehc containing h=" << h_goal_count(current_state, task_proxy) << endl;
 
     if (task_properties::is_goal_state(task_proxy, current_state)) {
         log << "Solution found!" << endl;
