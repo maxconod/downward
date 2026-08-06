@@ -13,7 +13,7 @@ using namespace std;
 
 namespace sat_ehc {
 
-bool is_same_state(State a, State b) {
+static bool is_same_state(State a, State b) {
     a.unpack();
     b.unpack();
     return a.get_unpacked_values() == b.get_unpacked_values();
